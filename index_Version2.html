@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatizuota Sąmata</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Sąmatų Generatorius (bkgrupe.lt)</h1>
+        <p>Įveskite prekių kodus, kiekvieną naujoje eilutėje.</p>
+
+        <textarea id="codesInput" rows="10" placeholder="Pavyzdžiui:&#10;26792&#10;31015&#10;34547"></textarea>
+
+        <button id="generateBtn">Generuoti Sąmatą</button>
+
+        <div id="status"></div>
+        
+        <div class="results-container">
+            <button id="exportBtn" class="hidden">Eksportuoti į CSV</button>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Prekės kodas</th>
+                        <th>Pavadinimas</th>
+                        <th>Kaina, €</th>
+                        <th>Būsena</th>
+                        <th>Nuoroda</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rezultatai bus čia -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
