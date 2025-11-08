@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
+
+Document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generateBtn');
     const codesInput = document.getElementById('codesInput');
     const statusDiv = document.getElementById('status');
@@ -12,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Išvalome senus rezultatus
         resultsTableBody.innerHTML = '';
         exportBtn.classList.add('hidden');
         generateBtn.disabled = true;
@@ -37,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     exportBtn.addEventListener('click', () => {
         const rows = Array.from(resultsTableBody.querySelectorAll('tr'));
         const csvContent = [
-            '"Prekės kodas","Pavadinimas","Kaina, €","Būsena","Nuoroda"',
+            '"Prekės kodas","Pavadinimas","Kaina, €","Būsena","Nuoroda"', // CSV header
             ...rows.map(row => {
                 const cells = Array.from(row.querySelectorAll('td'));
                 return cells.map(cell => `"${cell.textContent.replace(/"/g, '""')}"`).join(',');
@@ -68,27 +70,46 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchProductData(code) {
         // Naudojame viešą proxy, kad išvengtume CORS problemų naršyklėje
         const proxyUrl = 'https://api.allorigins.win/raw?url=';
-        const searchUrl = `${proxyUrl}https://www.bkgrupe.lt/lt/search?search_query=${encodeURIComponent(code)}`;
+        
+        // Atnaujintas paieškos URL, skirtas spectrabaltic.lt
+        const searchUrlBase = 'https://www.spectrabaltic.lt/lt/paieska?search='; 
+        const searchUrl = `${proxyUrl}${encodeURIComponent(searchUrlBase + code)}`;
 
         try {
             const response = await fetch(searchUrl);
             const html = await response.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
             
-            const productLinkTag = doc.querySelector('.product_img_link');
+            // 1. SELEKTORIUS PRODUKTO NUORODAI (paieškos rezultatuose)
+            const productLinkTag = doc.querySelector('.products-list .product a'); 
+            
             if (!productLinkTag) {
                 return { code, name: '-', price: '-', status: 'Nerasta', link: '' };
             }
 
             const productUrl = productLinkTag.getAttribute('href');
-            const productPageResponse = await fetch(`${proxyUrl}${encodeURIComponent(productUrl)}`);
+            // Pridedame bazinį URL, nes nuoroda dažnai yra reliatyvi
+            const fullProductUrl = 'https://www.spectrabaltic.lt' + productUrl; 
+            
+            const productPageResponse = await fetch(`${proxyUrl}${encodeURIComponent(fullProductUrl)}`);
             const productHtml = await productPageResponse.text();
             const productDoc = new DOMParser().parseFromString(productHtml, 'text/html');
 
-            const name = productDoc.querySelector('h1[itemprop="name"]')?.textContent.trim() || 'Nerastas pavadinimas';
-            const price = productDoc.querySelector('span[itemprop="price"]')?.getAttribute('content') || 'Nenurodyta';
+            // 2. SELEKTORIUS PAVADINIMUI (produkto puslapyje)
+            const name = productDoc.querySelector('h1')?.textContent.trim() || 'Nerastas pavadinimas';
             
-            return { code, name, price, status: 'Rasta', link: productUrl };
+            // 3. SELEKTORIUS KAINAI (produkto puslapyje)
+            let priceText = productDoc.querySelector('.price')?.textContent.trim() || 'Nenurodyta';
+            
+            // Kainos apdorojimas: konvertavimas į formatą su tašku, pašalinus nereikalingus simbolius
+            const price = priceText
+                .replace(/[^\d.,]/g, '') 
+                .replace(',', '.')       
+                .trim()
+                .split(' ')[0]         
+                || 'Nenurodyta';
+            
+            return { code, name, price, status: 'Rasta', link: fullProductUrl };
         } catch (error) {
             console.error('Klaida ieškant prekės:', code, error);
             return { code, name: 'Klaida', price: '-', status: 'Klaida', link: '' };
