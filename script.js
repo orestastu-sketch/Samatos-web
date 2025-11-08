@@ -1,4 +1,3 @@
-
 Document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generateBtn');
     const codesInput = document.getElementById('codesInput');
@@ -38,8 +37,9 @@ Document.addEventListener('DOMContentLoaded', () => {
 
     exportBtn.addEventListener('click', () => {
         const rows = Array.from(resultsTableBody.querySelectorAll('tr'));
+        // Pridėti antraštes
         const csvContent = [
-            '"Prekės kodas","Pavadinimas","Kaina, €","Būsena","Nuoroda"', // CSV header
+            '"Prekės kodas","Pavadinimas","Kaina, €","Būsena","Nuoroda"', 
             ...rows.map(row => {
                 const cells = Array.from(row.querySelectorAll('td'));
                 return cells.map(cell => `"${cell.textContent.replace(/"/g, '""')}"`).join(',');
@@ -67,11 +67,12 @@ Document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // FUNKCIJA PRITAIKYTA spectrabaltic.lt
     async function fetchProductData(code) {
-        // Naudojame viešą proxy, kad išvengtume CORS problemų naršyklėje
+        // Viešas proxy: api.allorigins.win
         const proxyUrl = 'https://api.allorigins.win/raw?url=';
         
-        // Atnaujintas paieškos URL, skirtas spectrabaltic.lt
+        // Paieškos URL, skirtas spectrabaltic.lt
         const searchUrlBase = 'https://www.spectrabaltic.lt/lt/paieska?search='; 
         const searchUrl = `${proxyUrl}${encodeURIComponent(searchUrlBase + code)}`;
 
@@ -80,7 +81,7 @@ Document.addEventListener('DOMContentLoaded', () => {
             const html = await response.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
             
-            // 1. SELEKTORIUS PRODUKTO NUORODAI (paieškos rezultatuose)
+            // SELEKTORIUS PRODUKTO NUORODAI (paieškos rezultatuose)
             const productLinkTag = doc.querySelector('.products-list .product a'); 
             
             if (!productLinkTag) {
@@ -88,20 +89,20 @@ Document.addEventListener('DOMContentLoaded', () => {
             }
 
             const productUrl = productLinkTag.getAttribute('href');
-            // Pridedame bazinį URL, nes nuoroda dažnai yra reliatyvi
+            // Pilnas URL, nes nuoroda svetainėje yra reliatyvi
             const fullProductUrl = 'https://www.spectrabaltic.lt' + productUrl; 
             
             const productPageResponse = await fetch(`${proxyUrl}${encodeURIComponent(fullProductUrl)}`);
             const productHtml = await productPageResponse.text();
             const productDoc = new DOMParser().parseFromString(productHtml, 'text/html');
 
-            // 2. SELEKTORIUS PAVADINIMUI (produkto puslapyje)
+            // SELEKTORIUS PAVADINIMUI (produkto puslapyje)
             const name = productDoc.querySelector('h1')?.textContent.trim() || 'Nerastas pavadinimas';
             
-            // 3. SELEKTORIUS KAINAI (produkto puslapyje)
+            // SELEKTORIUS KAINAI (produkto puslapyje)
             let priceText = productDoc.querySelector('.price')?.textContent.trim() || 'Nenurodyta';
             
-            // Kainos apdorojimas: konvertavimas į formatą su tašku, pašalinus nereikalingus simbolius
+            // Kainos apdorojimas: pašalinami nereikalingi simboliai ir konvertuojama
             const price = priceText
                 .replace(/[^\d.,]/g, '') 
                 .replace(',', '.')       
