@@ -1,0 +1,2 @@
+# Samatos-web
+Automatizuotos samatos
